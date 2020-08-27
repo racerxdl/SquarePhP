@@ -1,6 +1,6 @@
 {
     "require": {
-        "react/socket": "^1.5.0",
+        "react/socket": "1.5.0",
         "thefox/utilities": "^2.0"
     }
 }
