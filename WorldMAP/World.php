@@ -7,7 +7,7 @@
        private $Entities;
 
        function __construct() {
-           $this->WorldTime = 19000;
+           $this->WorldTime = 0;
            $this->TotalWorldTime = 0;
            $this->TotalEntities = 0;
            $this->WorldName = "";
