@@ -9,4 +9,3 @@ $packetDecoders = array(
     0x01 => "Handshake_SERVER_PONG",
     0x1F => "KeepAlive",
 );
-?>

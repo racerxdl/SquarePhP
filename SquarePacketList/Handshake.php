@@ -49,12 +49,9 @@ class Handshake extends SquarePacket
                 $JoinGame = new JoinGame($this->handler);
                 $JoinGame->serialize();
 
-                // Spawn Position.
-                $Position = new Position($this->handler);
-                $Position->serialize();
+                // Handle Join
+                $this->handler->onJoin();
 
-                // Start Pining
-                $this->handler->sendKeepAlive();
                 break;
         }
     }
