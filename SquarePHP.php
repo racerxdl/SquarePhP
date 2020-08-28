@@ -29,7 +29,7 @@ Logger::getLogger("PHPServer")->info("Pronto para conexoes!");
     $loop = React\EventLoop\Factory::create();
     $socket = new React\Socket\Server('0.0.0.0:25565', $loop);
 
-    $serverHandler->config->description = "Seja bem vindo ao NaN e ao undefined is not defined";
+    $serverHandler->config->description = "Seja bem-vindo ao NaN e ao undefined is not defined";
     $serverHandler->config->maxPlayers = 10;
     $serverHandler->config->onlinePlayers = 0;
     $serverHandler->config->pngImage = $serverHandler->config->buildFavIcon();
