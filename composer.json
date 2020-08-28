@@ -1,6 +1,7 @@
 {
     "require": {
         "react/socket": "1.5.0",
-        "thefox/utilities": "^2.0"
+        "thefox/utilities": "^2.0",
+        "react/promise-timer": "^1.6.0"
     }
 }

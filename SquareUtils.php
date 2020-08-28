@@ -2,12 +2,10 @@
 
 include_once 'SquarePacket.php';
 
-function DecodePacket($connection, $data) {
-
+function DecodePacket($handler, $data) {
     // Pacote
-    $packet = new SquarePacket;
+    $packet = new SquarePacket($handler);
     $packet->data = $data;
-    $packet->originSocket = $connection;
 
     // Pacote normais possui tamanho e packet ID.
     $packet->packetSize = $packet->DecodeVarInt();
