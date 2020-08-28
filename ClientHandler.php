@@ -49,7 +49,7 @@ class ClientHandler
         $this->isClientJoined = true;
         $this->server->clientConnect();
 
-        echo "Cliente " . $this->conn->getRemoteAddress() . " entrou no mundo!" . PHP_EOL;
+        Logger::getLogger("PHPServer")->info("Cliente " . $this->conn->getRemoteAddress() . " entrou no mundo!");
     }
 
     function do()
@@ -88,9 +88,6 @@ class ClientHandler
         // Retorna a classe Packet
         $SquarePacket = ClientHandler::DecodePacket($this, $data);
 
-        // base concluida.
-        echo "Packet ID {$SquarePacket->packetID}, size {$SquarePacket->packetSize}" . PHP_EOL;
-
         // Packet handler
         $this->tryHandle($SquarePacket);
     }
@@ -111,6 +108,7 @@ class ClientHandler
     {
         // Verifica se o pacote existe.
         if (!array_key_exists($packet->packetID, $GLOBALS["GamePackets"])) {
+            Logger::getLogger("PHPServer")->warn("Cliente enviou um pacote invalido de ID 0x" . strtoupper(dechex($packet->packetID)) . " ({$packet->packetSize})");
             return;
         }
 

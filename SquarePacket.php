@@ -287,7 +287,7 @@ class SquarePacket
         // Escreve se estiver dispon?vel.
         if ($this->handler->conn->isWritable()) {
             $this->handler->conn->write($byteArray);
-            echo "Enviando para o player " . bin2hex($byteArray) . PHP_EOL;
+            Logger::getLogger("PHPServer")->info("Enviando para o player " . bin2hex($byteArray));
         }
     }
 
