@@ -42,6 +42,10 @@ class ClientHandler
         $Position = new Position($this);
         $Position->serialize();
 
+        // Nome do servidor em jogo.
+        $PluginMessage = new ServerPluginMessage($this);
+        $PluginMessage->serialize();
+
         // Start Ping
         $this->sendKeepAlive();
 

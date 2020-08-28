@@ -10,4 +10,5 @@
  include_once 'SquarePacketList/Game-Packets/Position.php';
  include_once 'SquarePacketList/Game-Packets/KeepAlive.php';
  include_once 'SquarePacketList/Game-Packets/PlayerChat.php';
+ include_once 'SquarePacketList/Game-Packets/PluginMessage.php';
 ?>

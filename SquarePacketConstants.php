@@ -17,4 +17,5 @@
     public static $SERVER_POSITION = 0x34;
     public static $SERVER_PLAYER_CHAT = 0x0E;
     public static $SERVER_TIME_UPDATE = 0x4E;
+    public static $SERVER_PLUGIN_MESSAGE = 0x17;
  }
