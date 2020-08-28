@@ -26,7 +26,6 @@ class ClientHandler
         $this->loop = $loop;
         $this->conn = $conn;
         $this->isClientJoined = false;
-        $this->isGamePackets = false;
     }
 
     function onJoin() {  
@@ -48,7 +47,6 @@ class ClientHandler
 
         // Variaveis
         $this->isClientJoined = true;
-        $this->isGamePackets = true;
         $this->server->clientConnect();
 
         echo "Cliente " . $this->conn->getRemoteAddress() . " entrou no mundo!" . PHP_EOL;
