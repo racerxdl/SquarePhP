@@ -1,11 +1,7 @@
 <?php
 include_once 'SquarePacket.php';
 include_once 'SquareConstants.php';
-include_once 'Handshake_SERVER_MOTD.php';
-include_once 'ENCRYPT_REQUEST.php';
-include_once 'JoinGame.php';
-include_once 'Position.php';
-include_once 'LoginSuccess.php';
+include_once 'SquarePacketInclusion.php';
 
 class Handshake extends SquarePacket
 {
@@ -24,7 +20,7 @@ class Handshake extends SquarePacket
         // Numero de Protocolo.
         $protocolVersion = $this->DecodeVarInt();
 
-        // Verifica se o protocolo e válido.
+        // Verifica se o protocolo e valido.
         if ($protocolVersion != $GLOBALS["PROTOCOL_VERSION_DATA"]) {
             return;
         }
@@ -41,17 +37,7 @@ class Handshake extends SquarePacket
                 $handACK->serialize();
                 break;
             case 2:
-                // For unauthenticated ("cracked"/offline-mode) and localhost connections (either of the two conditions is enough for an unencrypted connection) there is no encryption. In that case Login Start is directly followed by Login Success.
-                $loginSuccess = new LoginSuccess($this->handler);
-                $loginSuccess->serialize();
-
-                // Join game
-                $JoinGame = new JoinGame($this->handler);
-                $JoinGame->serialize();
-
-                // Handle Join
                 $this->handler->onJoin();
-
                 break;
         }
     }

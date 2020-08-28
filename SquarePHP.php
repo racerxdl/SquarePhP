@@ -12,6 +12,7 @@ $serverHandler = new ServerHandler;
 $serverHandler->config->description = "Seja bem vindo ao NaN e ao undefined is not defined";
 $serverHandler->config->maxPlayers = 10;
 $serverHandler->config->onlinePlayers = 0;
+$serverHandler->config->pngImage = $serverHandler->config->buildFavIcon();
 
 $socket->on('connection', function (React\Socket\ConnectionInterface $connection) use ($loop, $serverHandler) {
     $clientHandler = new ClientHandler($loop, $serverHandler, $connection);

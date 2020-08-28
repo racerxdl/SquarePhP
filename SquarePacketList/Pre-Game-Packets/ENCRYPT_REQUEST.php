@@ -1,7 +1,7 @@
 <?php
 // https://wiki.vg/Protocol#Login
 include_once 'SquarePacket.php';
-
+include_once 'SquarePacketConstants.php';
 class ENCRYPT_REQUEST extends SquarePacket
 {
     function serialize()
@@ -9,7 +9,7 @@ class ENCRYPT_REQUEST extends SquarePacket
 
         // Encryptation
         $ENCRYPT_REQUEST = new SquarePacket($this->handler);
-        $ENCRYPT_REQUEST->packetID = 0x01;
+        $ENCRYPT_REQUEST->packetID = SquarePacketConstants::$SERVER_ENCRYPT_REQUEST;
 
         // Secret KEY
         $array = array(rand(), rand(), rand(), rand());

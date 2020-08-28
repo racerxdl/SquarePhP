@@ -16,6 +16,19 @@ class ServerConfig
     // Nome do Servidor
     public string $serverName;
 
+    // PNG
+    public string $pngImage;
+
+    // Carrega a imagem .png
+    function buildFavIcon() {
+        if (file_exists ("favicon.png")) {
+            $path = 'favicon.png';
+            $type = pathinfo($path, PATHINFO_EXTENSION);
+            $data = file_get_contents($path);
+            return 'data:image/png;base64,' . base64_encode($data);
+        }        
+    }
+
     function buildJson(): string
     {
         $data = array(
@@ -34,9 +47,9 @@ class ServerConfig
             "version" => array(
                 "name" => "PhP Quadrado",
                 "protocol" => $GLOBALS["PROTOCOL_VERSION_DATA"],
-            )
+            ),
+            "favicon" => $this->pngImage,    
         );
-
         return json_encode($data);
     }
 }

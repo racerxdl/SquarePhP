@@ -4,6 +4,7 @@ use React\Promise\Timer;
 
 include_once 'SquarePacket.php';
 include_once 'SquareConstants.php';
+include_once 'SquarePacketInclusion.php';
 
 class ClientHandler
 {
@@ -16,7 +17,7 @@ class ClientHandler
     // Loop de Eventos do ReactPHP
     public $loop;
 
-    // Se o player já entrou no mundo
+    // Se o player ja entrou no mundo
     public bool $isClientJoined;
 
     function __construct(React\EventLoop\StreamSelectLoop $loop, ServerHandler $server, React\Socket\ConnectionInterface $conn)
@@ -25,19 +26,32 @@ class ClientHandler
         $this->loop = $loop;
         $this->conn = $conn;
         $this->isClientJoined = false;
-        echo("Nova conexão de " . $conn->getRemoteAddress() . PHP_EOL);
+        $this->isGamePackets = false;
     }
 
-    function onJoin() {
-        echo "Cliente " . $this->conn->getRemoteAddress() . " entrou no mundo!" . PHP_EOL;
-        $this->isClientJoined = true;
-        $this->server->clientConnect();
+    function onJoin() {  
+
+        // For unauthenticated ("cracked"/offline-mode) and localhost connections (either of the two conditions is enough for an unencrypted connection) there is no encryption. In that case Login Start is directly followed by Login Success.
+        $loginSuccess = new LoginSuccess($this, "PHPServer");
+        $loginSuccess->serialize();
+ 
+        // Join game
+        $JoinGame = new JoinGame($this);
+        $JoinGame->serialize();        
+
         // Spawn Position.
         $Position = new Position($this);
         $Position->serialize();
 
-        // Start Pining
+        // Start Ping
         $this->sendKeepAlive();
+
+        // Variaveis
+        $this->isClientJoined = true;
+        $this->isGamePackets = true;
+        $this->server->clientConnect();
+
+        echo "Cliente " . $this->conn->getRemoteAddress() . " entrou no mundo!" . PHP_EOL;
     }
 
     function do()
@@ -50,9 +64,14 @@ class ClientHandler
             if ($this->isClientJoined) {
                 $this->server->clientDisconnect();
             }
-            echo "O " . $this->conn->getRemoteAddress() . " foi de base..." . PHP_EOL;
+        });
+        $this->conn->on('error', function () {
+            if ($this->isClientJoined) {
+                $this->server->clientDisconnect();
+            }
         });
     }
+
     static function DecodePacket($handler, $data) {
         // Pacote
         $packet = new SquarePacket($handler);
@@ -72,7 +91,7 @@ class ClientHandler
         $SquarePacket = ClientHandler::DecodePacket($this, $data);
 
         // base concluida.
-        echo "Packet ID {$SquarePacket->packetID}, size {$SquarePacket->packetSize} \n";
+        echo "Packet ID {$SquarePacket->packetID}, size {$SquarePacket->packetSize}" . PHP_EOL;
 
         // Packet handler
         $this->tryHandle($SquarePacket);
@@ -81,28 +100,26 @@ class ClientHandler
     function sendKeepAlive()
     {
         // Manda o KeepAlive
-        echo("Keep Alive\n");
         if ($this->conn->isWritable()) {
             $keepAlive = new KeepAlive($this);
             $keepAlive->serialize();
             Timer\resolve(5, $this->loop)->then(function () {
                 $this->sendKeepAlive();
             });
-        } else {
-            echo("Parando keep alive. Conexão caiu!" . PHP_EOL);
         }
     }
 
     function tryHandle($packet)
     {
-
         // Verifica se o pacote existe.
-        if (!array_key_exists($packet->packetID, $GLOBALS["packetDecoders"])) {
+        if (!array_key_exists($packet->packetID, $GLOBALS["GamePackets"])) {
             return;
         }
 
-        // Tenta ler o pacote.
-        $packetClassHandler = new $GLOBALS["packetDecoders"][$packet->packetID]($this);
+        // Lista de Pacotes
+        $packetClassHandler = new $GLOBALS["GamePackets"][$packet->packetID]($this);
+
+        // Leitura
         $packetClassHandler->data = $packet->data;
         $packetClassHandler->offset = $packet->offset;
         $packetClassHandler->packetSize = $packet->packetSize;
