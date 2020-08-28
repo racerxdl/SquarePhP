@@ -92,13 +92,27 @@ class ClientHandler
         $this->tryHandle($SquarePacket);
     }
 
+    function SendWorldTime() {
+        // TODO: Pegar em qual mundo o jogador est?, e usar no index.
+        $WorldTime = $this->server->GetWorld(0)->GetWorldTime();
+        $TotalWorldTime = $this->server->GetWorld(0)->GetTotalWorldTime();
+
+        // Envia o World Time
+        $WorldTimePacket = new SquarePacket($this);
+        $WorldTimePacket->packetID = SquarePacketConstants::$SERVER_TIME_UPDATE;
+        $WorldTimePacket->WriteLong($TotalWorldTime);
+        $WorldTimePacket->WriteLong($WorldTime);
+        $WorldTimePacket->SendPacket();
+    }
+
     function sendKeepAlive()
     {
         // Manda o KeepAlive
         if ($this->conn->isWritable()) {
             $keepAlive = new KeepAlive($this);
             $keepAlive->serialize();
-            Timer\resolve(5, $this->loop)->then(function () {
+            Timer\resolve(1, $this->loop)->then(function () {
+                $this->SendWorldTime();
                 $this->sendKeepAlive();
             });
         }
@@ -119,6 +133,7 @@ class ClientHandler
         $packetClassHandler->data = $packet->data;
         $packetClassHandler->offset = $packet->offset;
         $packetClassHandler->packetSize = $packet->packetSize;
+        $packetClassHandler->ServerHandler = $this->server;
         $packetClassHandler->deserialize();
     }
 }

@@ -18,6 +18,9 @@ class SquarePacket
     // Client Handler do cliente
     public $handler;
 
+    // Server Handler
+    public $ServerHandler;
+
     function __construct(ClientHandler $handler)
     {
         $this->handler = $handler;
