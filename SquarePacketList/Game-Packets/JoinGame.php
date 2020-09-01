@@ -17,8 +17,8 @@ class JoinGame extends SquarePacket
             // SJoinGamePacket.java - Decompiled
             $JoinGame->WriteInt(1500);
             $JoinGame->WriteByte(false);
-            $JoinGame->WriteByte(0); // Current Game mode.
-            $JoinGame->WriteByte(0); // Old game mode.
+            $JoinGame->WriteByte(1); // Current Game mode.
+            $JoinGame->WriteByte(0xFF); // Old game mode.
 
             // Map Names
             // https://wiki.vg/Pre-release_protocol#Join_Game
@@ -229,7 +229,7 @@ class JoinGame extends SquarePacket
                             // name
                             $JoinGame->WriteByte(8);
                             $JoinGame->WriteStringNBT("name");
-                            $JoinGame->WriteStringNBT("minecraft:overworld"); // Value....
+                            $JoinGame->WriteStringNBT($mapNames[0]); // Value....
                         }
                     }
                 }
@@ -237,14 +237,14 @@ class JoinGame extends SquarePacket
                 $JoinGame->WriteByte(0);  // TAG_END
             }
 
-            $JoinGame->WriteString("default"); // Default map name. (minecraft:overworld);
-            $JoinGame->WriteLong(0); // Seed.
+            $JoinGame->WriteString($mapNames[0]); // Default map name. (minecraft:overworld);
+            $JoinGame->WriteLong($this->ServerHandler->GetWorld(0)->GetWorldSeed()); // Seed.
             $JoinGame->WriteVarInt(20); // Max Players
-            $JoinGame->WriteVarInt(5); // View Distance
+            $JoinGame->WriteVarInt(8); // View Distance
             $JoinGame->WriteByte(false); //  this.reducedDebugInfo = buf.readBoolean();
             $JoinGame->WriteByte(false); //  this.enableRespawnScreen = buf.readBoolean();
             $JoinGame->WriteByte(false); //   this.field_240814_m_ = buf.readBoolean();
-            $JoinGame->WriteByte(false); //  this.field_240815_n_ = buf.readBoolean();
+            $JoinGame->WriteByte(true); //  this.field_240815_n_ = buf.readBoolean();
             $JoinGame->SendPacket();
         }
     }

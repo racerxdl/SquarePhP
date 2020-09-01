@@ -4,8 +4,6 @@ namespace NoiseGenerator;
 /**
  * Port of Ken Perlin's "Improved Noise"
  * http://mrl.nyu.edu/~perlin/noise/
- * https://github.com/martinlindhe/php-noisegenerator/blob/master/src/PerlinNoise.php
- * Util para cria??o do n?vel do terreno.
  */
 class PerlinNoise
 {

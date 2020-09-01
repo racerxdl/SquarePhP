@@ -7,6 +7,12 @@ class Handshake extends SquarePacket
 {
     function deserialize()
     {
+        // Login
+        if ($this->handler->State == 2) {
+            $this->handler->onJoin($this->ReadString());
+            return;
+        }
+
         // ACK
         $handACK = new Handshake_SERVER_MOTD($this->handler);
 
@@ -37,10 +43,11 @@ class Handshake extends SquarePacket
                 $handACK->serialize();
                 break;
             case 2:
-                $this->handler->onJoin();
+                $this->handler->State = $nextState;
+                if ($this->GetDataLength() != $this->GetFullDataLength()) {
+                    $this->handler->onJoin($this->ReadString());
+                }
                 break;
         }
     }
 }
-
-?>

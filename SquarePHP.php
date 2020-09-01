@@ -3,7 +3,7 @@
 include_once __DIR__ . '/vendor/autoload.php';
 include_once 'ClientHandler.php';
 include_once 'ServerHandler.php';
-include_once 'WorldMAP/World.php';
+include_once 'SquareWorld/World.php';
 use React\Promise\Timer;
 
 // Listas

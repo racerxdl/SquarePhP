@@ -226,6 +226,26 @@ class SquarePacket
         }
     }
 
+    function GetData() {
+        return $this->data;
+    }
+
+    function GetFullDataLength() {
+        return strlen($this->data);
+    }
+
+    function GetDataLength() {
+        return $this->offset;
+    }
+
+    function PrintHexString() {
+        $buffer = "";
+        for ($i = 0; $i < strlen ($this->data); $i++) {
+            $buffer .= chr(ord($this->data[$i]));
+        }
+        return bin2hex($buffer);
+    }
+
     // Send Packet 
     function SendPacket()
     {
@@ -256,7 +276,7 @@ class SquarePacket
             } while ($packetID != 0);
         }
 
-        // Copia a informa??o do pacote
+        // Copia a informacao do pacote
         for ($i = 0; $i < count($this->data); $i++) {
             $header[$headerOffset++] = $this->data[$i];
         }

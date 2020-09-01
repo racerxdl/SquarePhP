@@ -6,29 +6,50 @@ class ServerHandler
 {
     public $worlds;
     public ServerConfig $config;
+    public $PlayerList;
 
-    function __construct() {
+    function __construct()
+    {
         $this->config = new ServerConfig();
+        $this->PlayerList = array();
     }
 
-    function clientConnect() {
+    function AddPlayer($Player)
+    {
+        array_push($this->PlayerList, $Player);
+    }
+
+    function RemovePlayer($Player)
+    {
+        $key = array_search($Player, $this->PlayerList);
+        if ($key != null) {
+            unset($this->PlayerList[$key]);
+        }
+    }
+
+    function clientConnect()
+    {
         $this->config->onlinePlayers++;
     }
 
-    function clientDisconnect() {
+    function clientDisconnect()
+    {
         $this->config->onlinePlayers--;
     }
 
-    function getServerConfig() : string {
+    function getServerConfig(): string
+    {
         return $this->config->buildJson();
     }
 
-    function TickWorlds() {
+    function TickWorlds()
+    {
         for ($i = 0; $i < count($this->worlds); $i++) {
             $this->worlds[$i]->Tick();
         }
     }
-    function GetWorld($index) {
+    function GetWorld($index)
+    {
         return $this->worlds[$index];
     }
 }

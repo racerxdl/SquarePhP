@@ -11,4 +11,8 @@
  include_once 'SquarePacketList/Game-Packets/KeepAlive.php';
  include_once 'SquarePacketList/Game-Packets/PlayerChat.php';
  include_once 'SquarePacketList/Game-Packets/PluginMessage.php';
+ include_once 'SquarePacketList/Game-Packets/WorldDifficulty.php';
+ include_once 'SquarePacketList/Game-Packets/PlayerAbilities.php';
+ include_once 'SquarePacketList/Game-Packets/HeldItemChange.php';
+ include_once 'SquarePacketList/Game-Packets/ChunkData.php';
 ?>

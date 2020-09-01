@@ -9,9 +9,9 @@ class Position extends SquarePacket
     {
         $Position = new SquarePacket($this->handler);
         $Position->packetID = SquarePacketConstants::$SERVER_POSITION;
-        $Position->WriteDouble(64); // X
-        $Position->WriteDouble(64); // Y
-        $Position->WriteDouble(64); // Z
+        $Position->WriteDouble(0); // X
+        $Position->WriteDouble(16); // Y
+        $Position->WriteDouble(0); // Z
         $Position->WriteFloat(0); // YAW
         $Position->WriteFloat(0); // PITCH
         $Position->WriteByte(0x01);

@@ -18,4 +18,9 @@
     public static $SERVER_PLAYER_CHAT = 0x0E;
     public static $SERVER_TIME_UPDATE = 0x4E;
     public static $SERVER_PLUGIN_MESSAGE = 0x17;
+    public static $SERVER_WORLD_DIFFICULTY = 0x0D;
+    public static $SERVER_PLAYER_ABILITIES = 0x30;
+    public static $SERVER_HELD_ITEM = 0x3F;
+    public static $SERVER_CHUNK_DATA = 0x20;
+    public static $SERVER_UPDATE_VIEW_POSITION = 0x40;
  }

@@ -1,0 +1,71 @@
+<?php
+class World
+{
+    private int $WorldTime;
+    private int $TotalWorldTime;
+    private int $TotalEntities;
+    private int $WorldDifficulty;
+    private string $WorldName;
+    private int $WorldSeed;
+    private $Entities;
+
+    function __construct()
+    {
+        $this->WorldTime = 0;
+        $this->TotalWorldTime = 0;
+        $this->TotalEntities = 0;
+        $this->WorldName = "";
+        $this->Entities = array();
+        $this->WorldDifficulty = 3; // Hard
+        $this->WorldSeed = round(microtime(true) * 1000);
+    }
+
+    function GetWorldTime()
+    {
+        return $this->WorldTime;
+    }
+
+    function GetWorldSeed() {
+        return $this->WorldSeed;
+    }
+
+    function SetWorldName($val)
+    {
+        $this->WorldName = $val;
+    }
+
+    function GetTotalWorldTime()
+    {
+        return $this->TotalWorldTime;
+    }
+
+    function GetWorldDifficulty()
+    {
+        return $this->WorldDifficulty;
+    }
+
+    function AddEntity($entity)
+    {
+        $this->Entities[$this->TotalEntities++] = $entity;
+    }
+
+    function Tick()
+    {
+        $this->WorldTime += 20; // 20 = 1s
+    }
+
+    function SetWorldTime($value)
+    {
+        $this->WorldTime = $value;
+    }
+
+    function AddWorldTime($value)
+    {
+        $this->WorldTime += $value;
+    }
+
+    function RemoveWorldTime($value)
+    {
+        $this->WorldTime -= $value;
+    }
+}

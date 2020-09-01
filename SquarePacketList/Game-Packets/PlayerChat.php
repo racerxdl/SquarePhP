@@ -14,7 +14,7 @@
              "translate" => "chat.type.text",
              "with" => array(
                 array(
-                    "text" => "PHPServer", // Nick do Usuario
+                    "text" => $this->handler->GetMyPlayer()->GetPlayerName(), // Nick do Usuario
                 ),
                 array(
                     "text" => $mChatMessage,

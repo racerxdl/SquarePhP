@@ -5,7 +5,7 @@ use React\Promise\Timer;
 include_once 'SquarePacket.php';
 include_once 'SquareConstants.php';
 include_once 'SquarePacketInclusion.php';
-
+include_once 'SquareWorld/Player.php';
 class ClientHandler
 {
     // Gerenciador do servidor
@@ -17,26 +17,39 @@ class ClientHandler
     // Loop de Eventos do ReactPHP
     public $loop;
 
-    // Se o player ja entrou no mundo
-    public bool $isClientJoined;
+    // Player
+    public $Player;
+
+    // Estado Atual
+    public $State;
 
     function __construct(React\EventLoop\StreamSelectLoop $loop, ServerHandler $server, React\Socket\ConnectionInterface $conn)
     {
         $this->server = $server;
         $this->loop = $loop;
         $this->conn = $conn;
-        $this->isClientJoined = false;
     }
 
-    function onJoin() {  
+    function GetMyPlayer()
+    {
+        return $this->Player;
+    }
+
+    function onJoin($nick)
+    {
+        // J? est? logado.
+        if ($this->Player != null) {
+            return;
+        }
 
         // For unauthenticated ("cracked"/offline-mode) and localhost connections (either of the two conditions is enough for an unencrypted connection) there is no encryption. In that case Login Start is directly followed by Login Success.
-        $loginSuccess = new LoginSuccess($this, "PHPServer");
+        $loginSuccess = new LoginSuccess($this, $nick);
         $loginSuccess->serialize();
- 
+
         // Join game
         $JoinGame = new JoinGame($this);
-        $JoinGame->serialize();        
+        $JoinGame->ServerHandler = $this->server;
+        $JoinGame->serialize();
 
         // Spawn Position.
         $Position = new Position($this);
@@ -46,12 +59,35 @@ class ClientHandler
         $PluginMessage = new ServerPluginMessage($this);
         $PluginMessage->serialize();
 
+        // Dificuldade no mundo
+        $WorldDifficulty = new WorldDifficulty($this);
+        $WorldDifficulty->ServerHandler = $this->server;
+        $WorldDifficulty->serialize();
+
+        // Player Abilities
+        $PlayerAbilities = new PlayerAbilities($this);
+        $PlayerAbilities->ServerHandler = $this->server;
+        $PlayerAbilities->serialize();
+
+        // Held Item Change
+        $HeldItem = new HeldItemChange($this);
+        $HeldItem->ServerHandler = $this->server;
+        $HeldItem->serialize();
+
+        // Chunk Data
+        $ChunkData = new ChunkData($this);
+        $ChunkData->ServerHandler = $this->server;
+        $ChunkData->serialize();
+
+        // Create Player
+        $this->Player = new Player($nick);
+
         // Start Ping
         $this->sendKeepAlive();
 
         // Variaveis
-        $this->isClientJoined = true;
         $this->server->clientConnect();
+        $this->server->AddPlayer($this->Player);
 
         Logger::getLogger("PHPServer")->info("Cliente " . $this->conn->getRemoteAddress() . " entrou no mundo!");
     }
@@ -63,18 +99,21 @@ class ClientHandler
         });
 
         $this->conn->on('end', function () {
-            if ($this->isClientJoined) {
+            if ($this->Player != null) {
+                $this->server->RemovePlayer($this->Player);
                 $this->server->clientDisconnect();
             }
         });
         $this->conn->on('error', function () {
-            if ($this->isClientJoined) {
+            if ($this->Player != null) {
+                $this->server->RemovePlayer($this->Player);
                 $this->server->clientDisconnect();
             }
         });
     }
 
-    static function DecodePacket($handler, $data) {
+    static function DecodePacket($handler, $data)
+    {
         // Pacote
         $packet = new SquarePacket($handler);
         $packet->data = $data;
@@ -96,7 +135,8 @@ class ClientHandler
         $this->tryHandle($SquarePacket);
     }
 
-    function SendWorldTime() {
+    function SendWorldTime()
+    {
         // TODO: Pegar em qual mundo o jogador est?, e usar no index.
         $WorldTime = $this->server->GetWorld(0)->GetWorldTime();
         $TotalWorldTime = $this->server->GetWorld(0)->GetTotalWorldTime();
@@ -141,5 +181,3 @@ class ClientHandler
         $packetClassHandler->deserialize();
     }
 }
-
-?>
