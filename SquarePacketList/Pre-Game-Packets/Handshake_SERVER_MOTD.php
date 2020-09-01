@@ -1,12 +1,12 @@
 <?php
-
+include_once 'SquarePacketConstants.php';
 class Handshake_SERVER_MOTD extends SquarePacket
 {
     function serialize()
     {
         // Send MOTD
         $SERVER_LIST_PING = new SquarePacket($this->handler);
-        $SERVER_LIST_PING->packetID = 0;
+        $SERVER_LIST_PING->packetID = SquarePacketConstants::$SERVER_HANDSHAKE;
         $SERVER_LIST_PING->WriteString($this->handler->server->getServerConfig());
         $SERVER_LIST_PING->SendPacket();
 

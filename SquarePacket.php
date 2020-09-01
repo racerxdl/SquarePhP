@@ -18,6 +18,9 @@ class SquarePacket
     // Client Handler do cliente
     public $handler;
 
+    // Server Handler
+    public $ServerHandler;
+
     function __construct(ClientHandler $handler)
     {
         $this->handler = $handler;
@@ -29,7 +32,7 @@ class SquarePacket
         $numRead = 0;
         $result = 0;
         do {
-            $read = ord($this->data[$this->offset++]) & 0xFF;
+            $read = ord($this->data[$this->offset++]);
             $value = ($read & 0b01111111);
             $result |= ($value << (7 * $numRead));
             $numRead++;
@@ -46,7 +49,7 @@ class SquarePacket
         $stringLength = $this->DecodeVarInt();
         $str = "";
         for ($i = 0; $i < $stringLength; $i++) {
-            $str .= chr(ord($this->data[$this->offset++]) & 0xFF);
+            $str .= chr(ord($this->data[$this->offset++]));
         }
         return trim($str);
     }
@@ -57,7 +60,7 @@ class SquarePacket
         $stringLength = $this->DecodeVarInt() * 2;
         $str = "";
         for ($i = 0; $i < $stringLength; $i++) {
-            $str .= chr(ord($this->data[$this->offset++]) & 0xFF);
+            $str .= chr(ord($this->data[$this->offset++]));
         }
         return trim($str);
     }
@@ -166,7 +169,12 @@ class SquarePacket
     // Double
     function WriteDouble($value)
     {
-        $this->WriteLong($value);
+       // E	double (machine dependent size, big endian byte order)
+       // https://www.php.net/manual/pt_BR/function.pack.php
+       $temp = pack("E", $value);
+       for ($i = 0; $i < strlen($temp); $i++) {
+           $this->WriteByte(ord($temp[$i]));
+       }
     }
 
     // Write String
@@ -218,6 +226,26 @@ class SquarePacket
         }
     }
 
+    function GetData() {
+        return $this->data;
+    }
+
+    function GetFullDataLength() {
+        return strlen($this->data);
+    }
+
+    function GetDataLength() {
+        return $this->offset;
+    }
+
+    function PrintHexString() {
+        $buffer = "";
+        for ($i = 0; $i < strlen ($this->data); $i++) {
+            $buffer .= chr(ord($this->data[$i]));
+        }
+        return bin2hex($buffer);
+    }
+
     // Send Packet 
     function SendPacket()
     {
@@ -248,7 +276,7 @@ class SquarePacket
             } while ($packetID != 0);
         }
 
-        // Copia a informa??o do pacote
+        // Copia a informacao do pacote
         for ($i = 0; $i < count($this->data); $i++) {
             $header[$headerOffset++] = $this->data[$i];
         }
@@ -278,11 +306,11 @@ class SquarePacket
         for ($i = 0; $i < count($fullPacket); $i++) {
             $byteArray .= chr($fullPacket[$i]);
         }
+
+        // Escreve se estiver dispon?vel.
         if ($this->handler->conn->isWritable()) {
-            echo "Enviando para o cliente " . bin2hex($byteArray) . "\n";
             $this->handler->conn->write($byteArray);
-        } else {
-            echo "Conexão caiu!!!!" . PHP_EOL;
+            Logger::getLogger("PHPServer")->info("Enviando para o player " . bin2hex($byteArray));
         }
     }
 

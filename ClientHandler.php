@@ -4,7 +4,8 @@ use React\Promise\Timer;
 
 include_once 'SquarePacket.php';
 include_once 'SquareConstants.php';
-
+include_once 'SquarePacketInclusion.php';
+include_once 'SquareWorld/Player.php';
 class ClientHandler
 {
     // Gerenciador do servidor
@@ -16,28 +17,79 @@ class ClientHandler
     // Loop de Eventos do ReactPHP
     public $loop;
 
-    // Se o player já entrou no mundo
-    public bool $isClientJoined;
+    // Player
+    public $Player;
+
+    // Estado Atual
+    public $State;
 
     function __construct(React\EventLoop\StreamSelectLoop $loop, ServerHandler $server, React\Socket\ConnectionInterface $conn)
     {
         $this->server = $server;
         $this->loop = $loop;
         $this->conn = $conn;
-        $this->isClientJoined = false;
-        echo("Nova conexão de " . $conn->getRemoteAddress() . PHP_EOL);
     }
 
-    function onJoin() {
-        echo "Cliente " . $this->conn->getRemoteAddress() . " entrou no mundo!" . PHP_EOL;
-        $this->isClientJoined = true;
-        $this->server->clientConnect();
+    function GetMyPlayer()
+    {
+        return $this->Player;
+    }
+
+    function onJoin($nick)
+    {
+        // J? est? logado.
+        if ($this->Player != null) {
+            return;
+        }
+
+        // For unauthenticated ("cracked"/offline-mode) and localhost connections (either of the two conditions is enough for an unencrypted connection) there is no encryption. In that case Login Start is directly followed by Login Success.
+        $loginSuccess = new LoginSuccess($this, $nick);
+        $loginSuccess->serialize();
+
+        // Join game
+        $JoinGame = new JoinGame($this);
+        $JoinGame->ServerHandler = $this->server;
+        $JoinGame->serialize();
+
         // Spawn Position.
         $Position = new Position($this);
         $Position->serialize();
 
-        // Start Pining
+        // Nome do servidor em jogo.
+        $PluginMessage = new ServerPluginMessage($this);
+        $PluginMessage->serialize();
+
+        // Dificuldade no mundo
+        $WorldDifficulty = new WorldDifficulty($this);
+        $WorldDifficulty->ServerHandler = $this->server;
+        $WorldDifficulty->serialize();
+
+        // Player Abilities
+        $PlayerAbilities = new PlayerAbilities($this);
+        $PlayerAbilities->ServerHandler = $this->server;
+        $PlayerAbilities->serialize();
+
+        // Held Item Change
+        $HeldItem = new HeldItemChange($this);
+        $HeldItem->ServerHandler = $this->server;
+        $HeldItem->serialize();
+
+        // Chunk Data
+        $ChunkData = new ChunkData($this);
+        $ChunkData->ServerHandler = $this->server;
+        $ChunkData->serialize();
+
+        // Create Player
+        $this->Player = new Player($nick);
+
+        // Start Ping
         $this->sendKeepAlive();
+
+        // Variaveis
+        $this->server->clientConnect();
+        $this->server->AddPlayer($this->Player);
+
+        Logger::getLogger("PHPServer")->info("Cliente " . $this->conn->getRemoteAddress() . " entrou no mundo!");
     }
 
     function do()
@@ -47,13 +99,21 @@ class ClientHandler
         });
 
         $this->conn->on('end', function () {
-            if ($this->isClientJoined) {
+            if ($this->Player != null) {
+                $this->server->RemovePlayer($this->Player);
                 $this->server->clientDisconnect();
             }
-            echo "O " . $this->conn->getRemoteAddress() . " foi de base..." . PHP_EOL;
+        });
+        $this->conn->on('error', function () {
+            if ($this->Player != null) {
+                $this->server->RemovePlayer($this->Player);
+                $this->server->clientDisconnect();
+            }
         });
     }
-    static function DecodePacket($handler, $data) {
+
+    static function DecodePacket($handler, $data)
+    {
         // Pacote
         $packet = new SquarePacket($handler);
         $packet->data = $data;
@@ -71,43 +131,53 @@ class ClientHandler
         // Retorna a classe Packet
         $SquarePacket = ClientHandler::DecodePacket($this, $data);
 
-        // base concluida.
-        echo "Packet ID {$SquarePacket->packetID}, size {$SquarePacket->packetSize} \n";
-
         // Packet handler
         $this->tryHandle($SquarePacket);
+    }
+
+    function SendWorldTime()
+    {
+        // TODO: Pegar em qual mundo o jogador est?, e usar no index.
+        $WorldTime = $this->server->GetWorld(0)->GetWorldTime();
+        $TotalWorldTime = $this->server->GetWorld(0)->GetTotalWorldTime();
+
+        // Envia o World Time
+        $WorldTimePacket = new SquarePacket($this);
+        $WorldTimePacket->packetID = SquarePacketConstants::$SERVER_TIME_UPDATE;
+        $WorldTimePacket->WriteLong($TotalWorldTime);
+        $WorldTimePacket->WriteLong($WorldTime);
+        $WorldTimePacket->SendPacket();
     }
 
     function sendKeepAlive()
     {
         // Manda o KeepAlive
-        echo("Keep Alive\n");
         if ($this->conn->isWritable()) {
             $keepAlive = new KeepAlive($this);
             $keepAlive->serialize();
-            Timer\resolve(5, $this->loop)->then(function () {
+            Timer\resolve(1, $this->loop)->then(function () {
+                $this->SendWorldTime();
                 $this->sendKeepAlive();
             });
-        } else {
-            echo("Parando keep alive. Conexão caiu!" . PHP_EOL);
         }
     }
 
     function tryHandle($packet)
     {
-
         // Verifica se o pacote existe.
-        if (!array_key_exists($packet->packetID, $GLOBALS["packetDecoders"])) {
+        if (!array_key_exists($packet->packetID, $GLOBALS["GamePackets"])) {
+            Logger::getLogger("PHPServer")->warn("Cliente enviou um pacote invalido de ID 0x" . strtoupper(dechex($packet->packetID)) . " ({$packet->packetSize})");
             return;
         }
 
-        // Tenta ler o pacote.
-        $packetClassHandler = new $GLOBALS["packetDecoders"][$packet->packetID]($this);
+        // Lista de Pacotes
+        $packetClassHandler = new $GLOBALS["GamePackets"][$packet->packetID]($this);
+
+        // Leitura
         $packetClassHandler->data = $packet->data;
         $packetClassHandler->offset = $packet->offset;
         $packetClassHandler->packetSize = $packet->packetSize;
+        $packetClassHandler->ServerHandler = $this->server;
         $packetClassHandler->deserialize();
     }
 }
-
-?>
