@@ -96,6 +96,20 @@ class SquarePacket
             ($this->ReadByte() << 24) + ($this->ReadByte() << 16) + ($this->ReadByte() << 8) + $this->ReadByte();
     }
 
+    // Read Double
+    function ReadDouble() {
+        $array = unpack('E', $this->data, $this->offset);
+        $this->offset += 8;
+        return $array[1];
+    }
+
+    // Read Double
+    function ReadFloat() {
+        $array = unpack('G', $this->data, $this->offset);
+        $this->offset += 4;
+        return $array[1];
+    }
+
     // Write Byte
     function WriteByte($value)
     {
@@ -226,6 +240,13 @@ class SquarePacket
         }
     }
 
+    function SetData($string) {
+        for ($i = 0; $i < strlen($string); $i++) {
+            $this->WriteByte($string[$i]);
+        }
+        $this->offset = 0;
+    }
+
     function GetData() {
         return $this->data;
     }
@@ -238,6 +259,15 @@ class SquarePacket
         return $this->offset;
     }
 
+    function Buffer2String() {
+        $string = "";
+        $array = $this->GetData();
+        for ($i = 0; $i < count($array); $i++) {
+            $string .= chr($array[$i]);
+        }
+        return $string;
+    }
+
     function PrintHexString() {
         $buffer = "";
         for ($i = 0; $i < strlen ($this->data); $i++) {
@@ -246,7 +276,9 @@ class SquarePacket
         return bin2hex($buffer);
     }
 
-    function PreparePacket() : string {
+    // Send Packet 
+    function SendPacket()
+    {
         // Header
         $header = array();
         $headerOffset = 0;
@@ -305,19 +337,11 @@ class SquarePacket
             $byteArray .= chr($fullPacket[$i]);
         }
 
-        return $byteArray;
-    }
-
-    // Send Packet 
-    function SendPacket()
-    {
-        $byteArray = $this->PreparePacket();
         // Escreve se estiver dispon?vel.
-//        if ($this->handler->conn->isWritable()) {
-//            $this->handler->conn->write($byteArray);
-           $this->handler->SendPacket($byteArray);
-            Logger::getLogger("PHPServer")->info("Enviando para o player " . bin2hex($byteArray));
-//        }
+        if ($this->handler->conn->isWritable()) {
+            $this->handler->conn->write($byteArray);
+            //Logger::getLogger("PHPServer")->info("Enviando para o player " . bin2hex($byteArray));
+        }
     }
 
 

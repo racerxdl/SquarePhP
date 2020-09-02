@@ -15,4 +15,6 @@
  include_once 'SquarePacketList/Game-Packets/PlayerAbilities.php';
  include_once 'SquarePacketList/Game-Packets/HeldItemChange.php';
  include_once 'SquarePacketList/Game-Packets/ChunkData.php';
+ include_once 'SquarePacketList/Game-Packets/PlayerMove.php';
+ include_once 'SquarePacketList/Game-Packets/PlayerBlock.php';
 ?>

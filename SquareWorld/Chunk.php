@@ -2,7 +2,7 @@
 include_once 'Array/PaleteArray.php';
 include_once 'SquarePacket.php';
 
-// Suporta at? 16x16x16 blocos. (x = 16, y = 16, z = 16);
+// Suporta ate 16x16x16 blocos. (x = 16, y = 16, z = 16);
 class ChunkSelection
 {
     public $Array;
@@ -34,11 +34,30 @@ class ChunkSelection
     {
         $solidBlocks = 0;
         foreach ($this->BlockList as $v) {
-            if ($v != 0) {
-                $solidBlocks++;
-            }
+            $solidBlocks++;
         }
         return $solidBlocks;
+    }
+
+    function Read($Buffer)
+    {
+        // Quantidade de blocos s?lidos.
+        $solidBlocks = $Buffer->ReadShort();
+
+        // Paleta
+        $Pallete = $Buffer->ReadByte();
+
+        // Total de Blocos presentes na chunk
+        $BlockLength = $Buffer->DecodeVarInt();
+        for ($i = 0; $i < $BlockLength; $i++) {
+            $this->BlockList[$i] = $Buffer->DecodeVarInt();
+        }
+
+        // Tamanho da paleta
+        $PalleteLength = $Buffer->DecodeVarInt();
+        for ($i = 0; $i < $PalleteLength; $i++) {
+            $this->Array->SetHardPosition($i, $Buffer->ReadLong());
+        }
     }
 
     function Serialize($Output)
@@ -107,6 +126,18 @@ class Chunk
     function GetSelectionMask()
     {
         return $this->SelectionMask;
+    }
+
+    function Read($buffer)
+    {
+        $buffer->DecodeVarInt();
+        for ($i = 0; $i < 16; $i++) {
+            if (($this->SelectionMask & (1 << $i)) != 0) {
+                $chunkSelection = new ChunkSelection;
+                $chunkSelection->Read($buffer);
+                $this->ChunkSelections[$i] = $chunkSelection;
+            }
+        }
     }
 
     function Serialize($Output)

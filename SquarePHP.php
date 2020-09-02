@@ -1,10 +1,13 @@
 <?php
-
+ini_set('memory_limit', '8192M'); // PHJavaP
 include_once __DIR__ . '/vendor/autoload.php';
 include_once 'ClientHandler.php';
 include_once 'ServerHandler.php';
 include_once 'SquareWorld/World.php';
-use React\Promise\Timer;
+
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
 // Listas
 $worldList = array("world", "world_the_nether", "world_the_end");
@@ -17,9 +20,11 @@ $serverHandler = new ServerHandler;
         if (!file_exists($worldList[$i])) {
             Logger::getLogger("PHPServer")->info("Criando o mundo {$worldList[$i]}, por favor aguarde...");
             mkdir($worldList[$i]);
+            mkdir($worldList[$i] . "/data/");
         }
         $world = new World;
-        $world->SetWorldName($worldList[$i]);;
+        $world->SetWorldName($worldList[$i]);
+        $world->LoadChunks();
         array_push($worlds, $world);
     }
 }

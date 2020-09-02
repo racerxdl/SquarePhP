@@ -1,10 +1,12 @@
 <?php
-class PaleteArray {
-    public $storage;
-    public $bitsPerNumber;
-    public $singleNumberMask;
+class PaleteArray
+{
+	public $storage;
+	public $bitsPerNumber;
+	public $singleNumberMask;
 
-	function ceilToBase($number, $base) {
+	function ceilToBase($number, $base)
+	{
 		$ceil = ($number / $base) * $base;
 		if ($number != $ceil) {
 			$ceil += $base;
@@ -12,14 +14,15 @@ class PaleteArray {
 		return $ceil;
 	}
 
-    function __construct($bitsPerNumber, $size)
-    {
-        $this->bitsPerNumber = $bitsPerNumber;
+	function __construct($bitsPerNumber, $size)
+	{
+		$this->bitsPerNumber = $bitsPerNumber;
 		$this->singleNumberMask = (1 << $bitsPerNumber) - 1;
-        $this->storage = array_fill(0, $this->ceilToBase($size * $bitsPerNumber, 64) / 64, 0x0);
-    }
-    
-    function getNumber($index) : int {
+		$this->storage = array_fill(0, $this->ceilToBase($size * $bitsPerNumber, 64) / 64, 0x0);
+	}
+
+	function getNumber($index): int
+	{
 		$bitStartIndex = $index * $this->bitsPerNumber;
 		$arrStartIndex = $bitStartIndex >> 6;
 		$arrEndIndex = (($bitStartIndex + $this->bitsPerNumber) - 1) >> 6;
@@ -29,9 +32,10 @@ class PaleteArray {
 		} else {
 			return (int) ((($this->storage[$arrStartIndex] >> $localStartBitIndex) | ($this->storage[$arrEndIndex] << (64 - $localStartBitIndex))) & $this->singleNumberMask);
 		}
-    }
+	}
 
-    function setNumber($index, $number) {
+	function setNumber($index, $number)
+	{
 		$bitStartIndex = $index * $this->bitsPerNumber;
 		$arrStartIndex = $bitStartIndex >> 6;
 		$arrEndIndex = (($bitStartIndex + $this->bitsPerNumber) - 1) >> 6;
@@ -42,9 +46,15 @@ class PaleteArray {
 			$otherPartShift = $this->bitsPerNumber - $thisPartSift;
 			$this->storage[$arrEndIndex] = ((($this->storage[$arrEndIndex] >> $otherPartShift) << $otherPartShift) | (($number & $this->singleNumberMask) >> $thisPartSift));
 		}
-    }
-    
-    function getPalette() {
-        return $this->storage;
-    }
+	}
+
+	function getPalette()
+	{
+		return $this->storage;
+	}
+
+	function SetHardPosition($idx, $value)
+	{
+		$this->storage[$idx] = $value;
+	}
 }
