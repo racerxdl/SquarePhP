@@ -4,6 +4,8 @@
     "thefox/utilities": "^2.0",
     "react/promise-timer": "^1.6.0",
     "ext-json": "*",
-    "apache/log4php": "^2.3"
+    "apache/log4php": "^2.3",
+    "php-ds/php-ds": "^1.2",
+    "react/child-process": "^0.6.1"
   }
 }

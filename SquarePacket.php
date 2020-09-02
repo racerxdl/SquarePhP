@@ -21,7 +21,7 @@ class SquarePacket
     // Server Handler
     public $ServerHandler;
 
-    function __construct(ClientHandler $handler)
+    function __construct(?ClientHandler $handler)
     {
         $this->handler = $handler;
     }
@@ -246,9 +246,7 @@ class SquarePacket
         return bin2hex($buffer);
     }
 
-    // Send Packet 
-    function SendPacket()
-    {
+    function PreparePacket() : string {
         // Header
         $header = array();
         $headerOffset = 0;
@@ -307,11 +305,19 @@ class SquarePacket
             $byteArray .= chr($fullPacket[$i]);
         }
 
+        return $byteArray;
+    }
+
+    // Send Packet 
+    function SendPacket()
+    {
+        $byteArray = $this->PreparePacket();
         // Escreve se estiver dispon?vel.
-        if ($this->handler->conn->isWritable()) {
-            $this->handler->conn->write($byteArray);
+//        if ($this->handler->conn->isWritable()) {
+//            $this->handler->conn->write($byteArray);
+           $this->handler->SendPacket($byteArray);
             Logger::getLogger("PHPServer")->info("Enviando para o player " . bin2hex($byteArray));
-        }
+//        }
     }
 
 

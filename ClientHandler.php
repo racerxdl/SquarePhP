@@ -1,6 +1,7 @@
 <?php
 
 use React\Promise\Timer;
+use Ds\Queue;
 
 include_once 'SquarePacket.php';
 include_once 'SquareConstants.php';
@@ -12,10 +13,12 @@ class ClientHandler
     public ServerHandler $server;
 
     // Conexao com cliente
-    public $conn;
+    private $conn;
 
     // Loop de Eventos do ReactPHP
     public $loop;
+
+    public Ds\Queue $queue;
 
     // Player
     public $Player;
@@ -28,11 +31,28 @@ class ClientHandler
         $this->server = $server;
         $this->loop = $loop;
         $this->conn = $conn;
+        $this->queue = new Ds\Queue();
     }
 
     function GetMyPlayer()
     {
         return $this->Player;
+    }
+
+    function ProcessQueue() {
+        if (!$this->conn->isWritable()) {
+            Logger::getLogger("PHPServer")->error("Connection not open. Stopping queue process");
+            return;
+        }
+
+        while ($this->queue->count()) {
+            $packet = $this->queue->pop();
+            $this->conn->write($packet);
+        }
+
+        Timer\resolve(1, $this->loop)->then(function () {
+          $this->ProcessQueue();
+        });
     }
 
     function onJoin($nick)
@@ -75,9 +95,11 @@ class ClientHandler
         $HeldItem->serialize();
 
         // Chunk Data
-        $ChunkData = new ChunkData($this);
-        $ChunkData->ServerHandler = $this->server;
-        $ChunkData->serialize();
+        Timer\resolve(1, $this->loop)->then(function () {
+            $ChunkData = new ChunkData($this);
+            $ChunkData->ServerHandler = $this->server;
+            $ChunkData->serialize();
+        });
 
         // Create Player
         $this->Player = new Player($nick);
@@ -110,6 +132,14 @@ class ClientHandler
                 $this->server->clientDisconnect();
             }
         });
+
+        Logger::getLogger("PHPServer")->info("Starting QUEUE PROCESS");
+        $this->ProcessQueue();
+    }
+
+    public function SendPacket($data) {
+        $this->queue->push($data);
+//        $this->conn->write($data);
     }
 
     static function DecodePacket($handler, $data)
