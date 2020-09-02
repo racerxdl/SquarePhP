@@ -67,7 +67,7 @@ class PlayerMove extends SquarePacket
         {
             $viewdistance = new SquarePacket($this->handler);
             $viewdistance->packetID = 0x41;
-            $viewdistance->WriteVarInt(32);
+            $viewdistance->WriteVarInt(0xFF);
             $viewdistance->SendPacket();
         }
     }

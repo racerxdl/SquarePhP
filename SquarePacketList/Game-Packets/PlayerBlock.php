@@ -30,7 +30,7 @@ class PlayerBlock extends SquarePacket
                 $cursorZ = $this->ReadFloat();
             }
 
-            // Altera a posi??o
+            // Altera a posicao
             $x += $cursorX;
             $y += $cursorY;
             $z += $cursorZ;
