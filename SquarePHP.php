@@ -1,5 +1,6 @@
 <?php
-ini_set('memory_limit', '8192M'); // PHJavaP
+ini_set('memory_limit', '1024M');
+
 include_once __DIR__ . '/vendor/autoload.php';
 include_once 'ClientHandler.php';
 include_once 'ServerHandler.php';

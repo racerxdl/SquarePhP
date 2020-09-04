@@ -10,7 +10,7 @@ class PlayerBlock extends SquarePacket
     {
         $this->DecodeVarInt();
 
-        // Localiza??o onde o bloco foi posto
+        // Localizacao onde o bloco foi posto
         $location = $this->ReadLong();
 
         // Decode it
@@ -23,7 +23,7 @@ class PlayerBlock extends SquarePacket
             // Face
             $this->DecodeVarInt();
 
-            // Cursor Position (onde o player est? olhando)
+            // Cursor Position (onde o player esta olhando)
             {
                 $cursorX = $this->ReadFloat();
                 $cursorY = $this->ReadFloat();

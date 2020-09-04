@@ -1,6 +1,6 @@
 <?php
 include_once 'SquareWorld/Generation/PerlinNoise.php';
-
+include_once 'SquareMath.php';
 use NoiseGenerator\PerlinNoise;
 
 class World
@@ -22,7 +22,7 @@ class World
         $this->TotalWorldTime = 0;
         $this->TotalEntities = 0;
         $this->TotalChunks = 0;
-        $this->RenderDistance = 4;
+        $this->RenderDistance = 8;
         $this->WorldName = "world";
         $this->Entities = array();
         $this->WorldDifficulty = 3; // Hard
@@ -40,13 +40,8 @@ class World
         $this->ChunkData[$START_X][$END_Z] = $chunk;
     }
 
-    function fixModule($a, $b)
-    {
-        $r = $a % $b;
-        if ($r < 0) {
-            $r += abs($b);
-        }
-        return $r;
+    function GetTotalChunks() {
+        return count($this->ChunkData);
     }
 
     function PlaceBlock($LocX, $LocY, $LocZ)
@@ -54,11 +49,7 @@ class World
         if ($this->GetChunk($LocX >> 4, $LocZ >> 4) == null || $LocY < 0) {
             return;
         }
-        $this->ChunkData[$LocX >> 4][$LocZ >> 4]->SetBlock($this->fixModule($LocX, 16), $LocY, $this->fixModule($LocZ, 16), 1);
-    }
-
-    function chance($percent) {
-        return mt_rand(0, 99) < $percent;
+        $this->ChunkData[$LocX >> 4][$LocZ >> 4]->SetBlock(SquareMath::fixModule($LocX, 16), $LocY, SquareMath::fixModule($LocZ, 16), 1);
     }
 
     // TODO: GERACAO DO MUNDO

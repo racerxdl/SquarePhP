@@ -3,72 +3,93 @@
 include_once 'SquarePacket.php';
 include_once 'SquareConstants.php';
 include_once 'SquarePacketConstants.php';
-
+include_once 'SquareMath.php';
 class PlayerMove extends SquarePacket
 {
     function deserialize()
     {
-        // L? o pacote de movimento
+        // Le o pacote de movimento
         {
-            // Distancia de Renderiza??o
+            // Distancia de Renderizacao
             $renderDistance = $this->ServerHandler->GetWorld(0)->GetRenderDistance();
 
-            // Posi??o anterior
+            // Posicao anterior
             $OldX = $this->handler->GetMyPlayer()->GetX();
+            $OldY = $this->handler->GetMyPlayer()->GetY();
             $OldZ = $this->handler->GetMyPlayer()->GetZ();
 
-            // Posi??o atual
-            $x = $this->ReadDouble();
-            $y = $this->ReadDouble();
-            $z = $this->ReadDouble();
+            // Posicao atual
+            $PlayerX = $this->ReadDouble();
+            $PlayerY = $this->ReadDouble();
+            $PlayerZ = $this->ReadDouble();
             $onGround = $this->ReadByte();
 
-            // Old Chunks
+            // Chunk Anterior
             $OldChunkX = $OldX >> 4;
             $OldChunkZ = $OldZ >> 4;
 
-            // Chunks!
-            $ChunkX = $x >> 4;
-            $ChunkZ = $z >> 4;
+            // Chunk atual.
+            $ChunkX = $PlayerX >> 4;
+            $ChunkZ = $PlayerZ >> 4;
+
+            // Informa??o da chunk atual
             $ChunkData = $this->ServerHandler->GetWorld(0)->GetChunk($ChunkX, $ChunkZ);
+
+            // Aplica a posi??o atual
+            $this->handler->GetMyPlayer()->SetPosition($PlayerX, $PlayerY, $PlayerZ);
 
             // Verifica se a chunk existe
             if ($ChunkData == null) {
-                Logger::getLogger("PHPServer")->info("Nao existe coordenadas de chunks na regiao (CX/CZ/X/Z) = ({$ChunkX}/{$ChunkZ}) ({$x}/{$z}), criando uma nova.");
+                Logger::getLogger("PHPServer")->info("Nao existe coordenadas de chunks na regiao (X/Z) = ({$ChunkX}/{$ChunkZ}), criando uma nova.");
                 $this->ServerHandler->GetWorld(0)->CreateChunk($ChunkX, $ChunkZ);
             }
 
-            // Precisa enviar as chunks?
-            // todo: nao ta 100% perfeito, mas ja algo
-            if ($ChunkX != $OldChunkX || $ChunkZ != $OldChunkZ && $this->handler->GetMyPlayer()->HaveChunk($ChunkX, $ChunkZ) == null) {
-                // Carrega as chunks baseado no raio do player.
+            // Verifica se o player saiu da borda de 16x16x16
+            if ($ChunkX != $OldChunkX || $ChunkZ != $OldChunkZ) {
+                // Carrega novamente todas chunks novas.
                 for ($x = -$renderDistance; $x < $renderDistance; $x++) {
                     for ($z = -$renderDistance; $z < $renderDistance; $z++) {
-                        // Se o player ainda nao recebeu essa chunk....
-                        if ($this->handler->GetMyPlayer()->HaveChunk($ChunkX + $x, $ChunkZ + $z) == null) {
-                            $this->ServerHandler->GetWorld(0)->UnloadChunk2Player($this->handler, $OldChunkX + $x, $OldChunkZ + $z);
-                            $this->handler->GetMyPlayer()->UnsetChunk($OldChunkX + $x, $OldChunkZ + $z);
-                            $ChunkData = $this->ServerHandler->GetWorld(0)->GetChunk($ChunkX + $x, $ChunkZ + $z);
-                            if ($ChunkData == null) {
-                                Logger::getLogger("PHPServer")->info("Nao existe coordenadas de chunks na regiao (CX/CZ) = ({$ChunkX}/{$ChunkZ}), criando uma nova.");
-                                $this->ServerHandler->GetWorld(0)->CreateChunk($ChunkX + $x, $ChunkZ + $z);
-                            }
-                            $this->handler->GetMyPlayer()->SetHaveChunk($ChunkX + $x, $ChunkZ + $z);
-                            $this->ServerHandler->GetWorld(0)->SendChunk($this->handler, $ChunkX + $x, $ChunkZ + $z);
+                        // Chunks a ser enviadas.
+                        $ChunkOffsetX = $ChunkX + $x;
+                        $ChunkOffsetZ = $ChunkZ + $z;
+
+                        // Chunks Antigas
+                        $OldChunkOffsetX = $OldChunkX + $x;
+                        $OldChunkOffsetZ = $OldChunkZ + $z;
+
+                        // Descarrega as Chunks anteriores
+                        {
+                            $this->ServerHandler->GetWorld(0)->UnloadChunk2Player($this->handler, -$OldChunkOffsetX, -$OldChunkOffsetZ);
                         }
+
+                        // Envia as chunks.
+                        {
+                            // Verifica se existe e crie caso nao exista.
+                            $ChunkData = $this->ServerHandler->GetWorld(0)->GetChunk($ChunkOffsetX, $ChunkOffsetZ);
+                            if ($ChunkData == null) {
+                                Logger::getLogger("PHPServer")->info("Nao existe coordenadas de chunks na regiao (X/Z) = ({$ChunkOffsetX}/{$ChunkOffsetZ}), criando uma nova.");
+                                $this->ServerHandler->GetWorld(0)->CreateChunk($ChunkOffsetX, $ChunkOffsetZ);
+                            }
+                            // Envia ao jogador a chunk
+                            $this->ServerHandler->GetWorld(0)->SendChunk($this->handler, $ChunkOffsetX, $ChunkOffsetZ);
+                        }
+
+                        // Seta a posicao do player na chunk
+                        $chunkPos = new SquarePacket($this->handler);
+                        $chunkPos->packetID = 0x40;
+                        $chunkPos->WriteVarInt($ChunkOffsetX);
+                        $chunkPos->WriteVarInt($ChunkOffsetZ);
+                        $chunkPos->SendPacket();
                     }
                 }
+                // Distancia para o jogador.
+                {
+                    $viewdistance = new SquarePacket($this->handler);
+                    $viewdistance->packetID = 0x41;
+                    $viewdistance->WriteVarInt($renderDistance);
+                    $viewdistance->SendPacket();
+                }
             }
-            $this->handler->GetMyPlayer()->SetPosition($x, $y, $z);
-        }
-
-        // Sempre envie a view distance para o jogador.
-        // Isso evita o jogo ignorar as chunks
-        {
-            $viewdistance = new SquarePacket($this->handler);
-            $viewdistance->packetID = 0x41;
-            $viewdistance->WriteVarInt(0xFF);
-            $viewdistance->SendPacket();
         }
     }
 }

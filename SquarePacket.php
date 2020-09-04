@@ -159,9 +159,9 @@ class SquarePacket
         $this->WriteByte($i & 0xFF);
     }
 
-    // Write Var-int
     function WriteVarInt($value)
     {
+        $value &= 0xFFFFFFFF; // Signed to Unsigned. (https://en.wikipedia.org/wiki/LEB128, https://wiki.vg/Protocol)
         do {
             $temp = ($value & 0b01111111);
             // Note: >>> means that the sign bit is shifted with the rest of the number rather than being left alone
