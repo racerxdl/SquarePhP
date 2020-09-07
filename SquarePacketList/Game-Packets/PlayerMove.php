@@ -55,15 +55,6 @@ class PlayerMove extends SquarePacket
                         $ChunkOffsetX = $ChunkX + $x;
                         $ChunkOffsetZ = $ChunkZ + $z;
 
-                        // Chunks Antigas
-                        $OldChunkOffsetX = $OldChunkX + $x;
-                        $OldChunkOffsetZ = $OldChunkZ + $z;
-
-                        // Descarrega as Chunks anteriores
-                        {
-                            $this->ServerHandler->GetWorld(0)->UnloadChunk2Player($this->handler, -$OldChunkOffsetX, -$OldChunkOffsetZ);
-                        }
-
                         // Envia as chunks.
                         {
                             // Verifica se existe e crie caso nao exista.
