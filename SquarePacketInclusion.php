@@ -17,4 +17,5 @@
  include_once 'SquarePacketList/Game-Packets/ChunkData.php';
  include_once 'SquarePacketList/Game-Packets/PlayerMove.php';
  include_once 'SquarePacketList/Game-Packets/PlayerBlock.php';
+ include_once 'SquarePacketList/Game-Packets/PlayerRotation.php';
 ?>

@@ -13,6 +13,7 @@ class SquarePacketConstants
    public static $CLIENT_PLAYER_CHAT = 0x3;
    public static $CLIENT_PLAYER_MOVE = 0x12;
    public static $CLIENT_PLACE_BLOCK = 0x2E;
+   public static $CLIENT_PLAYER_ROTATION = 0x14;
 
    // Server Packets
    public static $SERVER_LOGIN = 0x2;
@@ -29,4 +30,10 @@ class SquarePacketConstants
    public static $SERVER_PLAYER_CONFIRM_MOVEMENT = 0x34;
    public static $SERVER_UNLOAD_CHUNK = 0x1C;
    public static $SERVER_VIEW_DISTANCE = 0x42;
+   public static $SERVER_PLAYER_LIST = 0x32;
+   public static $SERVER_PLAYER_SPAWN = 0x4;
+   public static $SERVER_ENTITY_START = 0x2A;
+   public static $SERVER_ENTITY_TELEPORT = 0x56;
+   public static $SERVER_DESTROY_ENTITY = 0x36;
 }
+

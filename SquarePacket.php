@@ -26,7 +26,7 @@ class SquarePacket
         $this->handler = $handler;
     }
 
-    // Metodos para serializa??o.
+    // Metodos para serializacao.
     function DecodeVarInt(): int
     {
         $numRead = 0;
@@ -173,11 +173,11 @@ class SquarePacket
         } while ($value != 0);
     }
 
-    // Write UUID
+    // https://en.wikipedia.org/wiki/Universally_unique_identifier
     function WriteUUID($value)
     {
-        $this->WriteLong($value);
-        $this->WriteLong($value);
+       $this->WriteLong($value);
+       $this->WriteLong($value);
     }
 
     // Double

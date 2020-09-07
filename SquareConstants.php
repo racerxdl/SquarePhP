@@ -13,4 +13,5 @@ $GamePackets = array(
     SquarePacketConstants::$CLIENT_PLAYER_CHAT => "PlayerChat",
     SquarePacketConstants::$CLIENT_PLAYER_MOVE => "PlayerMove",
     SquarePacketConstants::$CLIENT_PLACE_BLOCK => "PlayerBlock",
+    SquarePacketConstants::$CLIENT_PLAYER_ROTATION => "PlayerRotation",
 );

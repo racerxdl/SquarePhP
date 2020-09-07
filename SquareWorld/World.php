@@ -1,6 +1,7 @@
 <?php
 include_once 'SquareWorld/Generation/PerlinNoise.php';
 include_once 'SquareMath.php';
+
 use NoiseGenerator\PerlinNoise;
 
 class World
@@ -13,7 +14,8 @@ class World
     private int $TotalChunks;
     private int $WorldSeed;
     private int $RenderDistance;
-    private $Entities;
+    public $PlayerList;
+    public int $PlayerCount;
     public $ChunkData;
 
     function __construct()
@@ -22,12 +24,13 @@ class World
         $this->TotalWorldTime = 0;
         $this->TotalEntities = 0;
         $this->TotalChunks = 0;
-        $this->RenderDistance = 8;
+        $this->RenderDistance = 4;
         $this->WorldName = "world";
-        $this->Entities = array();
+        $this->PlayerList = array();
         $this->WorldDifficulty = 3; // Hard
         $this->WorldSeed = round(microtime(true) * 1000);
         $this->ChunkData = array();
+        $this->PlayerCount = 0;
     }
 
     function GetRenderDistance()
@@ -40,7 +43,14 @@ class World
         $this->ChunkData[$START_X][$END_Z] = $chunk;
     }
 
-    function GetTotalChunks() {
+    function AddPlayer($player)
+    {
+        $this->PlayerList[$this->PlayerCount++] = $player;
+        return rand($this->PlayerCount, 0xFFFFFFFFFF); // TODO: melhorar esse ID.
+    }
+
+    function GetTotalChunks()
+    {
         return count($this->ChunkData);
     }
 
@@ -55,16 +65,156 @@ class World
     // TODO: GERACAO DO MUNDO
     function CreateChunk($X, $Z)
     {
+        $ores = array(1, 3354, 6731, 69, 70, 71, 5254, 72, 232, 3886);
         $chunk = new Chunk;
+        $noise = new PerlinNoise(rand(0, 0xFFFF));
         for ($x = 0; $x < 16; $x++) {
             for ($z = 0; $z < 16; $z++) {
+                // Blocos iniciais
                 $chunk->SetBlock($x, 0, $z, 33); // bedrock
                 $chunk->SetBlock($x, 1, $z, 10); // terra
                 $chunk->SetBlock($x, 2, $z, 10); // terra
                 $chunk->SetBlock($x, 3, $z, 9); // grama
+
+                // teste altitude
+                /*
+                   $Noised = $noise->random2D(($x + rand(0, 0xFFFF)) / sqrt(4 * rand(1, 25)), ($z + rand(0, 0xFFFF) / sqrt(2 * rand(1, 25))));
+                   $Noised = abs($Noised);
+                   $Noised *= rand(1, rand(1, 63));
+                   $Noised = floor($Noised);
+                   $chunk->SetBlock($x, 4 + $Noised, $z, $ores[rand(0, count($ores) - 1)]);
+                */
             }
         }
         $this->SetChunk($X, $Z, $chunk);
+    }
+
+    // Broadcast packet
+    function BroadCastPacket($pkt)
+    {
+        for ($i = 0; $i < count($this->PlayerList); $i++) {
+            $Player = $this->PlayerList[$i];
+            $pkt->handler = $Player->ClientHandler;
+            $pkt->SendPacket();
+        }
+    }
+
+    // Update Tab
+    function UpdateTabList($handler)
+    {
+        // Tab List
+        {
+            $PlayerList = new SquarePacket($handler);
+            $PlayerList->packetID = SquarePacketConstants::$SERVER_PLAYER_LIST; 
+            {
+                $PlayerList->WriteVarInt(0); // Add Player
+                $PlayerList->WriteVarInt(count($this->PlayerList)); {
+                    for ($i = 0; $i < count($this->PlayerList); $i++) {
+                        $Player = $this->PlayerList[$i]; 
+                        {
+                            $PlayerList->WriteUUID($Player->GetUUID());
+                            $PlayerList->WriteString($Player->GetPlayerName());
+                            $PlayerList->WriteVarInt(0); // Sem Skin.
+                            $PlayerList->WriteVarInt(0); // gamemode
+                            $PlayerList->WriteVarInt(0); // ping
+                            $PlayerList->WriteByte(false);
+                        }
+                    }
+                }
+            }
+            $PlayerList->SendPacket();
+        }
+    }
+
+    // Remove o jogador da tab list
+    function RemovePlayerGame($Player)
+    {
+        for ($i = 0; $i < count($this->PlayerList); $i++) {
+            // Envia a todos os jogadores para remover o player do tab list
+            $PlayerList = new SquarePacket($this->PlayerList[$i]->ClientHandler);
+            $PlayerList->packetID = SquarePacketConstants::$SERVER_PLAYER_LIST;
+            $PlayerList->WriteVarInt(4); // Remove Player
+            $PlayerList->WriteVarInt(1);
+            $PlayerList->WriteUUID($Player->GetUUID());
+            $PlayerList->SendPacket();
+
+            // Envia a todos os jogadores removendo a entidade do mundo.
+            $DestroyEntity = new SquarePacket($this->PlayerList[$i]->ClientHandler);
+            $DestroyEntity->packetID = SquarePacketConstants::$SERVER_DESTROY_ENTITY;
+            $DestroyEntity->WriteVarInt(1);
+            $DestroyEntity->WriteVarInt($Player->GetEntityID());
+            $DestroyEntity->SendPacket();
+       }  
+    }
+
+    // Remove Player
+    function RemovePlayer($Player, $handler)
+    {
+        for ($i = 0; $i < count($this->PlayerList); $i++) {
+            if ($this->PlayerList[$i] == $Player) {
+                unset($this->PlayerList[$i]);
+                $this->PlayerCount--;
+            }
+        }
+        $this->PlayerList = array_values($this->PlayerList);
+        $this->RemovePlayerGame($Player);
+    }
+
+    // Lista de Jogadores
+    function SendPlayerList($self, $handler)
+    {
+        // Criacao de conteudo.
+        $PLAYER_CREEPER_ENTITY_TEST = true;
+
+        $this->UpdateTabList($handler);
+
+        // Spawna os jogadores
+        {
+            for ($i = 0; $i < count($this->PlayerList); $i++) {
+                $Player = $this->PlayerList[$i]; {
+                    if ($Player != $self) {
+                        if ($PLAYER_CREEPER_ENTITY_TEST) {
+                            $SpawnEntity = new SquarePacket($handler);
+                            $SpawnEntity->packetID = 0x02;
+                            $SpawnEntity->WriteVarInt($Player->GetEntityID()); // ID Entity
+                            $SpawnEntity->WriteUUID($Player->GetUUID());
+                            $SpawnEntity->WriteVarInt(12); // Entity ID ( https://wiki.vg/Entity_metadata#Mobs )
+                            $SpawnEntity->WriteDouble($Player->GetX());
+                            $SpawnEntity->WriteDouble($Player->GetY());
+                            $SpawnEntity->WriteDouble($Player->GetZ());
+                            $SpawnEntity->WriteByte(0);
+                            $SpawnEntity->WriteByte(0);
+                            $SpawnEntity->WriteByte(0);
+                            $SpawnEntity->WriteShort(0.5);
+                            $SpawnEntity->WriteShort(0.5);
+                            $SpawnEntity->WriteShort(0.5);
+                            $SpawnEntity->SendPacket();
+                        } else {
+                            $PlayerSpawn = new SquarePacket($handler);
+                            $PlayerSpawn->packetID = SquarePacketConstants::$SERVER_PLAYER_SPAWN;
+                            $PlayerSpawn->WriteVarInt($Player->GetEntityID());
+                            $PlayerSpawn->WriteUUID($Player->GetUUID());
+                            $PlayerSpawn->WriteDouble($Player->GetX());
+                            $PlayerSpawn->WriteDouble($Player->GetY());
+                            $PlayerSpawn->WriteDouble($Player->GetZ());
+                            $PlayerSpawn->WriteByte(0);
+                            $PlayerSpawn->WriteByte(0);
+                            $PlayerSpawn->SendPacket();
+                        }
+                    }
+                }
+            }
+        }
+
+        // Cria a entidade no cliente
+        {
+            for ($i = 0; $i < count($this->PlayerList); $i++) {
+                $EntityStart = new SquarePacket($handler);
+                $EntityStart->packetID = SquarePacketConstants::$SERVER_ENTITY_START;
+                $EntityStart->WriteVarInt($this->PlayerList[$i]->GetEntityID());
+                $EntityStart->SendPacket();
+            }
+        }
     }
 
     // Unload chunk

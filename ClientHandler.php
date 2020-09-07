@@ -1,6 +1,7 @@
 <?php
 
 use React\Promise\Timer;
+use React\Socket\Server;
 
 include_once 'SquarePacket.php';
 include_once 'SquareConstants.php';
@@ -43,7 +44,7 @@ class ClientHandler
         }
 
         // Create Player
-        $this->Player = new Player($nick);
+        $this->Player = new Player($this, $this->server, $nick);
 
         // For unauthenticated ("cracked"/offline-mode) and localhost connections (either of the two conditions is enough for an unencrypted connection) there is no encryption. In that case Login Start is directly followed by Login Success.
         $loginSuccess = new LoginSuccess($this, $nick);
@@ -89,6 +90,11 @@ class ClientHandler
         $this->server->clientConnect();
         $this->server->AddPlayer($this->Player);
 
+        // Envia os jogadores para quem entrou agora.
+        for ($i = 0; $i < count($this->server->GetWorld(0)->PlayerList); $i++) {
+            $Player =  $this->server->GetWorld(0)->PlayerList[$i]; 
+            $this->server->GetWorld(0)->SendPlayerList($Player, $Player->ClientHandler);
+        }       
         Logger::getLogger("PHPServer")->info("Cliente " . $this->conn->getRemoteAddress() . " entrou no mundo!");
     }
 
@@ -102,12 +108,14 @@ class ClientHandler
             if ($this->Player != null) {
                 $this->server->RemovePlayer($this->Player);
                 $this->server->clientDisconnect();
+                $this->server->GetWorld(0)->RemovePlayer($this->Player, $this);
             }
         });
         $this->conn->on('error', function () {
             if ($this->Player != null) {
                 $this->server->RemovePlayer($this->Player);
                 $this->server->clientDisconnect();
+                $this->server->GetWorld(0)->RemovePlayer($this->Player, $this);
             }
         });
     }

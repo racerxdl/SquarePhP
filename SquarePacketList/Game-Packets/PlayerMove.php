@@ -4,6 +4,7 @@ include_once 'SquarePacket.php';
 include_once 'SquareConstants.php';
 include_once 'SquarePacketConstants.php';
 include_once 'SquareMath.php';
+
 class PlayerMove extends SquarePacket
 {
     function deserialize()
@@ -32,11 +33,12 @@ class PlayerMove extends SquarePacket
             $ChunkX = $PlayerX >> 4;
             $ChunkZ = $PlayerZ >> 4;
 
-            // Informa??o da chunk atual
+            // Informacao da chunk atual.
             $ChunkData = $this->ServerHandler->GetWorld(0)->GetChunk($ChunkX, $ChunkZ);
 
-            // Aplica a posi??o atual
+            // Aplica a posicao.
             $this->handler->GetMyPlayer()->SetPosition($PlayerX, $PlayerY, $PlayerZ);
+            $this->handler->GetMyPlayer()->SetOnGround($onGround);
 
             // Verifica se a chunk existe
             if ($ChunkData == null) {
@@ -88,6 +90,26 @@ class PlayerMove extends SquarePacket
                     $viewdistance->packetID = 0x41;
                     $viewdistance->WriteVarInt($renderDistance);
                     $viewdistance->SendPacket();
+                }
+            }
+
+            // Envia o movimento para outros jogadores
+            {
+                $PlayerMove = new SquarePacket($this->handler);
+                $PlayerMove->packetID = SquarePacketConstants::$SERVER_ENTITY_TELEPORT;
+                $PlayerMove->WriteVarInt($this->handler->GetMyPlayer()->GetEntityID());
+                $PlayerMove->WriteDouble($PlayerX);
+                $PlayerMove->WriteDouble($PlayerY);
+                $PlayerMove->WriteDouble($PlayerZ);
+                $PlayerMove->WriteByte($this->handler->GetMyPlayer()->GetYaw());
+                $PlayerMove->WriteByte($this->handler->GetMyPlayer()->GetPitch());
+                $PlayerMove->WriteByte($onGround);
+                for ($i = 0; $i < count($this->ServerHandler->GetWorld(0)->PlayerList); $i++) {
+                    $bPlayer = $this->ServerHandler->GetWorld(0)->PlayerList[$i];
+                    if ($bPlayer != $this->handler->GetMyPlayer()) {
+                        $PlayerMove->handler = $bPlayer->ClientHandler;
+                        $PlayerMove->SendPacket();
+                    }
                 }
             }
         }

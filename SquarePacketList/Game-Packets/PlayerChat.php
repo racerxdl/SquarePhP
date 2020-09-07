@@ -61,7 +61,7 @@
             $ChatMessage->WriteString($this->mJsonMinecraft);
             $ChatMessage->WriteByte(0);
             $ChatMessage->WriteUUID(0);
-            $ChatMessage->SendPacket();
+            $this->ServerHandler->GetWorld(0)->BroadCastPacket($ChatMessage);
             return;    
         }
      }

@@ -1,5 +1,5 @@
 <?php
-ini_set('memory_limit', '1024M');
+ini_set('memory_limit', '2048M');
 
 include_once __DIR__ . '/vendor/autoload.php';
 include_once 'ClientHandler.php';
