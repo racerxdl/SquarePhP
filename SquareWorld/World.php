@@ -24,7 +24,7 @@ class World
         $this->TotalWorldTime = 0;
         $this->TotalEntities = 0;
         $this->TotalChunks = 0;
-        $this->RenderDistance = 4;
+        $this->RenderDistance = 8;
         $this->WorldName = "world";
         $this->PlayerList = array();
         $this->WorldDifficulty = 3; // Hard

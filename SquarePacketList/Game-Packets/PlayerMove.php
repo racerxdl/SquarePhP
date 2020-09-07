@@ -5,6 +5,20 @@ include_once 'SquareConstants.php';
 include_once 'SquarePacketConstants.php';
 include_once 'SquareMath.php';
 
+class PlayerPositionAndRotation extends SquarePacket
+{
+    function deserialize()
+    {
+        $PlayerX =  $this->ReadDouble(); // X
+        $PlayerY = $this->ReadDouble(); // Y
+        $PlayerZ = $this->ReadDouble(); // Z
+        $this->handler->GetMyPlayer()->SetPosition($PlayerX, $PlayerY, $PlayerZ);
+        $this->handler->GetMyPlayer()->SetYaw($this->ReadFloat());
+        $this->handler->GetMyPlayer()->SetPitch($this->ReadFloat());
+        $this->handler->GetMyPlayer()->SetOnGround($this->ReadByte());
+    }
+}
+
 class PlayerMove extends SquarePacket
 {
     function deserialize()

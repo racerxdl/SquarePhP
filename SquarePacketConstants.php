@@ -14,6 +14,7 @@ class SquarePacketConstants
    public static $CLIENT_PLAYER_MOVE = 0x12;
    public static $CLIENT_PLACE_BLOCK = 0x2E;
    public static $CLIENT_PLAYER_ROTATION = 0x14;
+   public static $CLIENT_PLAYER_POSITION_AND_ROTATION = 0x13;
 
    // Server Packets
    public static $SERVER_LOGIN = 0x2;
