@@ -248,10 +248,10 @@ class World
                 $ChunkPacket->WriteStringNBT("MOTION_BLOCKING"); // Root Element
                 {
                     $ChunkPacket->WriteByte(12);
-                    $ChunkPacket->WriteStringNBT("");
+                    $ChunkPacket->WriteStringNBT("MOTION_BLOCKING");
                     $ChunkPacket->WriteInt(36);
                     for ($i = 0; $i < 36; $i++) {
-                        $ChunkPacket->WriteLong($i);
+                        $ChunkPacket->WriteLong(-1);
                     }
                 }
                 $ChunkPacket->WriteByte(0);

@@ -83,6 +83,17 @@ class ClientHandler
         $ChunkData->ServerHandler = $this->server;
         $ChunkData->serialize();
 
+        // World Border
+        {
+            $WorldBorder = new SquarePacket($this);
+            $WorldBorder->packetID = 0x3D;
+            $WorldBorder->WriteVarInt(0); // set size
+            {
+               $WorldBorder->WriteDouble(100 * 2);
+            }
+            $WorldBorder->SendPacket();
+        }
+
         // Start Ping
         $this->sendKeepAlive();
 
