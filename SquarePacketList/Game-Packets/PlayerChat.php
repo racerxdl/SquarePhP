@@ -46,6 +46,14 @@
                 }
                 return;
             }
+
+            // todo: criar uma classe de comandos 
+            // salva os mundos
+            // /save-all
+            if (strpos($this->rawMinecraftMessage, "save-all")) {
+                $this->ServerHandler->GetWorld(0)->SaveWorld();
+                return;
+            }
             return;
         } else {
             $ChatMessage = new SquarePacket($this->handler);
@@ -53,9 +61,8 @@
             $ChatMessage->WriteString($this->mJsonMinecraft);
             $ChatMessage->WriteByte(0);
             $ChatMessage->WriteUUID(0);
-            $ChatMessage->SendPacket();
+            $this->ServerHandler->GetWorld(0)->BroadCastPacket($ChatMessage);
             return;    
         }
      }
  }
-?>

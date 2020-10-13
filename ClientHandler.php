@@ -1,7 +1,7 @@
 <?php
 
 use React\Promise\Timer;
-use Ds\Queue;
+use React\Socket\Server;
 
 include_once 'SquarePacket.php';
 include_once 'SquareConstants.php';
@@ -13,12 +13,10 @@ class ClientHandler
     public ServerHandler $server;
 
     // Conexao com cliente
-    private $conn;
+    public $conn;
 
     // Loop de Eventos do ReactPHP
     public $loop;
-
-    public Ds\Queue $queue;
 
     // Player
     public $Player;
@@ -31,7 +29,6 @@ class ClientHandler
         $this->server = $server;
         $this->loop = $loop;
         $this->conn = $conn;
-        $this->queue = new Ds\Queue();
     }
 
     function GetMyPlayer()
@@ -39,28 +36,15 @@ class ClientHandler
         return $this->Player;
     }
 
-    function ProcessQueue() {
-        if (!$this->conn->isWritable()) {
-            Logger::getLogger("PHPServer")->error("Connection not open. Stopping queue process");
-            return;
-        }
-
-        while ($this->queue->count()) {
-            $packet = $this->queue->pop();
-            $this->conn->write($packet);
-        }
-
-        Timer\resolve(1, $this->loop)->then(function () {
-          $this->ProcessQueue();
-        });
-    }
-
     function onJoin($nick)
     {
-        // J? est? logado.
+        // Ja esta logado.
         if ($this->Player != null) {
             return;
         }
+
+        // Create Player
+        $this->Player = new Player($this, $this->server, $nick);
 
         // For unauthenticated ("cracked"/offline-mode) and localhost connections (either of the two conditions is enough for an unencrypted connection) there is no encryption. In that case Login Start is directly followed by Login Success.
         $loginSuccess = new LoginSuccess($this, $nick);
@@ -95,14 +79,20 @@ class ClientHandler
         $HeldItem->serialize();
 
         // Chunk Data
-        Timer\resolve(1, $this->loop)->then(function () {
-            $ChunkData = new ChunkData($this);
-            $ChunkData->ServerHandler = $this->server;
-            $ChunkData->serialize();
-        });
+        $ChunkData = new ChunkData($this);
+        $ChunkData->ServerHandler = $this->server;
+        $ChunkData->serialize();
 
-        // Create Player
-        $this->Player = new Player($nick);
+        // World Border
+        {
+            $WorldBorder = new SquarePacket($this);
+            $WorldBorder->packetID = 0x3D;
+            $WorldBorder->WriteVarInt(0); // set size
+            {
+               $WorldBorder->WriteDouble(100 * 2);
+            }
+            $WorldBorder->SendPacket();
+        }
 
         // Start Ping
         $this->sendKeepAlive();
@@ -111,6 +101,11 @@ class ClientHandler
         $this->server->clientConnect();
         $this->server->AddPlayer($this->Player);
 
+        // Envia os jogadores para quem entrou agora.
+        for ($i = 0; $i < count($this->server->GetWorld(0)->PlayerList); $i++) {
+            $Player =  $this->server->GetWorld(0)->PlayerList[$i]; 
+            $this->server->GetWorld(0)->SendPlayerList($Player, $Player->ClientHandler);
+        }       
         Logger::getLogger("PHPServer")->info("Cliente " . $this->conn->getRemoteAddress() . " entrou no mundo!");
     }
 
@@ -124,22 +119,16 @@ class ClientHandler
             if ($this->Player != null) {
                 $this->server->RemovePlayer($this->Player);
                 $this->server->clientDisconnect();
+                $this->server->GetWorld(0)->RemovePlayer($this->Player, $this);
             }
         });
         $this->conn->on('error', function () {
             if ($this->Player != null) {
                 $this->server->RemovePlayer($this->Player);
                 $this->server->clientDisconnect();
+                $this->server->GetWorld(0)->RemovePlayer($this->Player, $this);
             }
         });
-
-        Logger::getLogger("PHPServer")->info("Starting QUEUE PROCESS");
-        $this->ProcessQueue();
-    }
-
-    public function SendPacket($data) {
-        $this->queue->push($data);
-//        $this->conn->write($data);
     }
 
     static function DecodePacket($handler, $data)
